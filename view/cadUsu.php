@@ -1,34 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auxílio Técnico</title>
+    <title>Cadastro de Usuário</title>
+    <link rel="stylesheet" href="../css/cssCadastro.css">
 </head>
 <body>
-    <form action="../controller/createUsu.php" method="POST">
-        <h1>Cadastro de Usuário</h1>
-        <label for="cxNome">Nome de Usuário:</label><br>
-        <input type="text" id="cxNome" name="cxNome" required><br><br>
+    <div class="form-container">
+        <form action="../controller/createUsu.php" method="POST" class="form-box">
+            <h1>Cadastro de Usuário</h1>
 
-        <label for="cxTelefone">Telefone:</label><br>
-        <input type="text" id="cxTelefone" name="cxTelefone" required><br><br>
+            <label for="cxNome">Nome de Usuário:</label>
+            <input type="text" id="cxNome" name="cxNome" required>
 
-        <label for="cxEmail">Email:</label><br>
-        <input type="email" id="cxEmail" name="cxEmail" required><br><br>
+            <label for="cxTelefone">Telefone:</label>
+            <input type="text" id="cxTelefone" name="cxTelefone" required>
 
-        <label for="cxSenha">Senha:</label><br>
-        <input type="password" id="cxSenha" name="cxSenha" required><br><br>
+            <label for="cxEmail">Email:</label>
+            <input type="email" id="cxEmail" name="cxEmail" required>
 
-        <label for="cxFuncao">Função:</label><br>
-        <select id="cxFuncao" name="cxFuncao">
-            <option value="cliente">Cliente</option>
-            <option value="tecnico">Técnico</option>
-        </select><br><br>
+            <label for="cxSenha">Senha:</label>
+            <input type="password" id="cxSenha" name="cxSenha" required>
 
-        <input type="submit" value="Cadastrar">
-        <input type="reset" value="Limpar"><br><br>
-    </form>
-    <h4>Já tem uma conta? <a href="../index.php">Fazer Login</a></h4>
+            <label for="cxFuncao">Função:</label>
+            <select id="cxFuncao" name="cxFuncao" required>
+                <option value="cliente">Cliente</option>
+                <option value="tecnico">Técnico</option>
+            </select>
+            
+            <br>
+            <br>
+            
+            <input type="submit" value="Cadastrar">
+            <input type="reset" value="Limpar">
+            
+            <div class="register-link">
+                <h4>Já tem uma conta? <a href="../index.php">Fazer Login</a></h4>
+            </div>
+        </form>
+    </div>
 </body>
 </html>

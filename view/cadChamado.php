@@ -1,53 +1,69 @@
 <?php
-    session_start();
-    $userId = $_SESSION['id'];
 
+// Cria sessão e verifica se o id foi passado na session
+    if (!isset($_SESSION)) {
+        session_start();
+    }
+
+    if (!isset($_SESSION['id'])) {
+        header('Location: ../index.php'); 
+        exit;
+    }
+
+// Armazena o ID e Funçaõ da SESSION em variáveis
+    $userId = $_SESSION['id'];
+    $userFuncao = $_SESSION['funcao'] ?? 'cliente';
+
+// Conexão com banco
     include_once '../factory/Conex.php';
 
     $conex = new Conex();
     $conn = $conex->getConn();
 
-    $queryCliente = "SELECT nome FROM tbUsu WHERE id = :id";
-    $busca = $conn->prepare($queryCliente);
-    $busca->bindParam(':id', $userId, PDO::PARAM_INT);
-    $busca->execute();
-
+// Função para obter o nome do cliente de acordo com o ID
     $clienteNome = '';
-    if ($busca->rowCount() > 0) {
-        $rowCliente = $busca->fetch(PDO::FETCH_ASSOC);
-        $clienteNome = $rowCliente['nome'];
-    }
-
-    $isCliente = false;
-    $isTecnico = false;
-    if (isset($_SESSION['funcao'])) {
-        if ($_SESSION['funcao'] == 'cliente') {
-            $isCliente = true;
-        } elseif ($_SESSION['funcao'] == 'tecnico') {
-            $isTecnico = true;
+    if ($userId) { 
+        $queryClienteNome = "SELECT nome FROM tbUsu WHERE id = :id";
+        $buscaNome = $conn->prepare($queryClienteNome);
+        $buscaNome->bindParam(':id', $userId, PDO::PARAM_INT);
+        $buscaNome->execute();
+        if ($rowNome = $buscaNome->fetch(PDO::FETCH_ASSOC)) {
+            $clienteNome = $rowNome['nome'];
         }
     }
-    if ($isCliente) {
-        $queryCliente = "SELECT nome FROM tbUsu WHERE id = :id";
-        $busca = $conn->prepare($queryCliente);
-        $busca->bindParam(':id', $userId, PDO::PARAM_INT);
-        $busca->execute();
 
-        if ($busca->rowCount() > 0) {
-            $rowCliente = $busca->fetch(PDO::FETCH_ASSOC);
-            $clienteNome = $rowCliente['nome'];
-        }
-    }
+// As variáveis são iniciadas com NULL. Se ele for cliente, a variável IsCliente recebe valor, se não permanece Nula
+    $isCliente = ($userFuncao == 'cliente');
+    $isTecnico = ($userFuncao == 'tecnico');
+
+// Em resumo, busca os chamados do cliente e ordena por data de criação se o usuário for cliente.
+// Se o usuário for técnico, ele busca todos os chamados.
+    $chamados = [];
     if ($isCliente) {
-        $queryChamados = "SELECT * FROM tbchamado WHERE idCliente = :idCliente";
+        $queryChamados = "SELECT c.*, u.nome as nomeCliente FROM tbchamado c JOIN tbusu u ON c.idCliente = u.id WHERE c.idCliente = :idCliente ORDER BY c.dataCriacao DESC";
         $buscaChamados = $conn->prepare($queryChamados);
         $buscaChamados->bindParam(':idCliente', $userId, PDO::PARAM_INT);
     } elseif ($isTecnico) {
-        $queryChamados = "SELECT * FROM tbchamado";
+        $queryChamados = "SELECT c.*, u.nome as nomeCliente FROM tbchamado c JOIN tbusu u ON c.idCliente = u.id ORDER BY c.dataCriacao DESC";
         $buscaChamados = $conn->prepare($queryChamados);
+    } else {
+
+        $buscaChamados = null;
     }
-    $buscaChamados->execute();
-    $chamados = $buscaChamados->fetchAll(PDO::FETCH_ASSOC);
+
+    if ($buscaChamados) {
+        $buscaChamados->execute();
+        $chamados = $buscaChamados->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+// Isso aqui serve para q o código do chamado apareça para o usuário, mas q ele não seja capaz de alterar.
+    $ultimoCodigo = 1; 
+    $buscaCOD = $conn->prepare("SELECT MAX(cod) AS max_cod FROM tbchamado");
+    $buscaCOD->execute();
+    $resultadoCod = $buscaCOD->fetch(PDO::FETCH_ASSOC);
+    if ($resultadoCod && $resultadoCod['max_cod'] !== null) {
+        $ultimoCodigo = $resultadoCod['max_cod'] + 1;
+    }
 ?>
 
 <!DOCTYPE html>
@@ -55,102 +71,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chamados</title>
+    <link rel="stylesheet" href="../css/cssChamUso.css">
+    <title>Gerenciamento de Chamados</title>
+    
 </head>
 <body>
     <div class="container">
-        <h1>Chamados Anteriores</h1>
+        <a href="../index.php" class="button-link sair" style="float: right;">Sair</a>
+        <h1>Meus Chamados / Gerenciar Chamados</h1>
+        <p>Bem-vindo(a), <?php echo htmlspecialchars($clienteNome); ?> (<?php echo htmlspecialchars($userFuncao); ?>)</p>
 
         <table class="tabelaChamados">
             <thead>
             <tr>
                 <th>ID Chamado</th>
-                <th>ID Cliente</th>
+                <th>Cliente</th>
                 <th>Descrição</th>
                 <th>Status</th>
                 <th>Categoria</th>
+                <th>Telefone Contato</th>
                 <th>Data de Criação</th>
-                <?php if(!$isCliente){
-                    echo "<th>Modificar</th><th>Deletar</th>";
-                    }
-                ?>
+                <!-- As funçõoes de Modificar e Excluir só podem existir se o usuário for técnico. -->
+                <?php if($isTecnico): ?>
+                    <th>Ações</th>
+                <?php endif; ?>
             </tr>
             </thead>
             <tbody>
-            <?php if (!empty($chamados)) {
-                foreach ($chamados as $chamado) {
-                echo "<tr>";
-                echo "<td>" . $chamado['cod'] . "</td>";
-                echo "<td>" . $chamado['idCliente'] . "</td>";
-                echo "<td>" . $chamado['descricao'] . "</td>";
-                echo "<td>" . $chamado['statusChamado'] . "</td>";
-                echo "<td>" . $chamado['categoria'] . "</td>";
-                echo "<td>" . $chamado['dataCriacao'] . "</td>";
-                if(!$isCliente){
-                    echo "<td><a href='../view/updChamado.php?cod=" . $chamado['cod'] . "&idCliente=" . $chamado['idCliente'] . "'>Modificar</a></td>";
-                    echo "<td><a href='../controller/deleteChamado.php?cod=" . $chamado['cod'] . "' onclick=\"return confirm('Tem certeza que deseja deletar este chamado?');\">Deletar</a></td>";
-                    echo "</tr>";
-                    }
-                }
-            } else {
-                echo "<tr>
-                <td colspan='8'>Nenhum chamado encontrado.</td>
-                </tr>";
-            }
-            ?>
+            <?php if (!empty($chamados)): ?>
+                <!-- Esse PHP busca os chamados do usuário no banco de dados e os retorna como linhas td da TABLE. -->
+                <?php foreach ($chamados as $chamado): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($chamado['cod']); ?></td>
+                    <td><?php echo htmlspecialchars($chamado['nomeCliente']); ?> (ID: <?php echo htmlspecialchars($chamado['idCliente']); ?>)</td>
+                    <td><?php echo nl2br(htmlspecialchars($chamado['descricao'])); ?></td>
+                    <td><?php echo htmlspecialchars($chamado['statusChamado']); ?></td>
+                    <td><?php echo htmlspecialchars($chamado['categoria']); ?></td>
+                    <td><?php echo htmlspecialchars($chamado['telefoneContato']); ?></td>
+                    <td><?php echo htmlspecialchars(date("d/m/Y H:i", strtotime($chamado['dataCriacao']))); ?></td>
+                    <?php if($isTecnico): ?>
+                    <td>
+                        <a href="../view/updChamado.php?cod=<?php echo $chamado['cod']; ?>" class="button-link" style="background-color: #ffc107;">Modificar</a>
+                        <a href="../controller/deleteChamado.php?cod=<?php echo $chamado['cod']; ?>" class="button-link" style="background-color: #dc3545;" onclick="return confirm('Tem certeza que deseja deletar este chamado?');">Deletar</a>
+                    </td>
+                    <?php endif; ?>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="<?php echo $isTecnico ? '8' : '7'; ?>">Nenhum chamado encontrado.</td>
+                </tr>
+            <?php endif; ?>
             </tbody>
         </table>
-        </table>
     </div>
+
     <div class="container">
-        <h1>Criar Chamado</h1>
+        <h1><?php echo $isCliente ? "Abrir Novo Chamado" : "Registrar Novo Chamado para Cliente"; ?></h1>
         <form action="../controller/createChamado.php" method="POST">
-            
-            <?php
-                // Corrigido: Removido bindParam desnecessário
-                $buscaCOD = $conn->prepare("SELECT MAX(cod) AS cod FROM tbchamado");
-                $buscaCOD->execute();
-                $resultado = $buscaCOD->fetch(PDO::FETCH_ASSOC);
-                $ultimoCodigo = isset($resultado['cod']) ? $resultado['cod'] + 1 : 1;
-            ?>
 
-            <label for="cxCod">Código:</label><br>
-            <input type="text" id="cxCod" name="cxCod" value="<?php echo $ultimoCodigo; ?>" readonly><br><br>
-            
-            <label for="cxCliente">Cliente:</label><br>
-            <input type="text" id="cxCliente" name="cxCliente" value="<?php echo htmlspecialchars($clienteNome); ?>" <?php echo $isCliente ? 'readonly' : ''; ?> required><br><br>
+            <label for="cxCod">Código do Chamado:</label>
+            <input type="text" id="cxCod" name="cxCod" value="<?php echo $ultimoCodigo; ?>" readonly class="readonly-field"><br>
 
-            <label for="cxDescricao">Descrição:</label><br>
-            <textarea id="cxDescricao" name="cxDescricao" required></textarea><br><br>
+            <label for="cxCliente">Cliente:</label>
+            <input type="text" id="cxCliente" name="cxCliente"
+                   value="<?php echo htmlspecialchars($clienteNome); ?>"
+                   <?php echo $isCliente ? 'readonly class="readonly-field"' : ''; ?> required><br>
+            <?php if ($isTecnico): ?>
+                <small>Para técnicos: Insira o nome exato do cliente cadastrado.</small>
+            <?php endif; ?>
 
-            <label for="cxStatus">Status:</label><br>
-            <select id="cxStatus" name="cxStatus" <?php echo !$isTecnico ? 'disabled' : ''; ?>>
-                <option value="aberto">Aberto</option>
+            <label for="cxDescricao">Descrição:</label>
+            <textarea id="cxDescricao" name="cxDescricao" rows="4" required></textarea><br>
+
+            <label for="cxStatus">Status:</label>
+            <!-- O campo STATUS só pode ser diferente de ABERTO se for um técnico criando um chamado (Não faz sentido um Cliente criar um chamado encerrado) -->
+            <select id="cxStatus" name="cxStatus" <?php echo $isCliente ? 'disabled class="readonly-field"' : ''; ?>>
+                <option value="aberto" <?php echo ($isCliente || !$isTecnico) ? 'selected' : '';?>>Aberto</option>
+                <?php if ($isTecnico):?>
                 <option value="em_andamento">Em Andamento</option>
                 <option value="fechado">Fechado</option>
-            </select><br><br>
+                <?php endif; ?>
+            </select><br>
+            <?php if($isCliente): ?>
+                <input type="hidden" name="cxStatus" value="aberto"> <?php endif; ?>
 
-            <label for="cxCategoria">Categoria:</label><br>
-            <select id="cxCategoria" name="cxCategoria">
+
+            <label for="cxCategoria">Categoria:</label>
+            <select id="cxCategoria" name="cxCategoria" required>
                 <option value="app">Aplicação</option>
                 <option value="site">Site</option>
                 <option value="conexao">Conexão</option>
                 <option value="conta">Conta</option>
                 <option value="computador">Computador</option>
                 <option value="outro">Outro</option>
-            </select><br><br>
-            <label for="cxTelefonePrincipal">Telefone Principal:</label><br>
-            <input type="tel" id="cxTelefonePrincipal" name="cxTelefonePrincipal" required><br><br>
-            
-            <label for="cxDataCriacao">Data de Criação:</label><br>
-            <input type="date" id="cxDataCriacao" name="cxDataCriacao" value="<?php echo date('Y-m-d'); ?>" readonly><br><br>
+            </select><br>
+
+            <label for="cxTelefonePrincipal">Telefone Principal para Contato:</label>
+            <input type="tel" id="cxTelefonePrincipal" name="cxTelefonePrincipal" placeholder="(XX) XXXXX-XXXX" required><br>
+
+            <label for="cxDataCriacao">Data de Criação:</label>
+            <input type="date" id="cxDataCriacao" name="cxDataCriacao" value="<?php echo date('Y-m-d'); ?>" readonly class="readonly-field"><br>
 
             <input type="submit" value="Criar Chamado">
-            <input type="reset" value="Limpar"><br><br>
+            <input type="reset" value="Limpar Campos">
         </form>
     </div>
+
+    <?php if ($isTecnico):?>
     <div class="container">
-        <a href="../index.php">Sair</a>
+        <a href="../view/cadUsu.php" class="button-link" style="background-color: #28a745;">Cadastrar Novo Usuário</a>
     </div>
+    <?php endif; ?>
+
 </body>
 </html>

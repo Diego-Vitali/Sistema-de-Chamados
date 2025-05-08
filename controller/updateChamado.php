@@ -32,7 +32,6 @@ if ($idCliente) {
     exit;
 }
 
-// Verifica se a query afetou alguma linha
 if ($update->rowCount()) {
     echo "<script>
         alert('Chamado Atualizado com Sucesso!');

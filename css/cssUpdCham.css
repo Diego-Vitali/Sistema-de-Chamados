@@ -1,0 +1,120 @@
+* {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 3rem 0;
+    background: linear-gradient(135deg, #f5f5f5, #cbe1ff);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 95%;
+    max-width: 600px;
+    background-color: #ffffff;
+    padding: 2rem 2.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.container h1 {
+    text-align: center;
+    color: #2a4d88;
+    margin-bottom: 1.5rem;
+}
+
+form label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: 500;
+    color: #333;
+}
+
+input[type="text"],
+input[type="tel"],
+select,
+textarea {
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 0.3rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    transition: border-color 0.3s ease;
+    font-size: 1rem;
+    background-color: #fff;
+    color: #333;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #2a4d88;
+    outline: none;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.readonly-field,
+input[readonly] {
+    background-color: #eaeaea;
+    color: #666;
+    cursor: not-allowed;
+}
+
+input[type="submit"],
+input[type="reset"] {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+input[type="submit"] {
+    background-color: #2a4d88;
+    color: white;
+    margin-right: 1rem;
+}
+
+input[type="submit"]:hover {
+    background-color: #1e3a78;
+}
+
+input[type="submit"]:active {
+    background-color: #1a2b5c;
+}
+
+input[type="reset"] {
+    background-color: #b3b3b3;
+    color: white;
+}
+
+input[type="reset"]:hover {
+    background-color: #999999;
+}
+
+input[type="reset"]:active {
+    background-color: #6b6b6b;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 1.5rem;
+    }
+
+    input[type="submit"],
+    input[type="reset"] {
+        width: 100%;
+        margin-top: 1rem;
+    }
+}

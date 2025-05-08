@@ -6,7 +6,7 @@ use dbchamados;
 
 create table tbusu(
 	id int primary key auto_increment,
-	nome char(55),
+	nome char(55) unique,
 	telefone int unique,
 	email char(55) unique,
 	senha char(55),

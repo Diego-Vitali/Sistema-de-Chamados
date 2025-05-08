@@ -1,18 +1,17 @@
-<?php 
-
+<?php
 class Conex {
-    private static $user = "root"; // Changed to static
-    private static $senha = "";   // Changed to static
+    private static $user = "root";
+    private static $senha = "";
     public static $connect = null;
 
     private static function Conectar() {
         try {
             if (self::$connect == null) {
                 self::$connect = new PDO(
-                    'mysql:host=localhost;dbname=dbChamados;',
-                    self::$user, // Accessing static properties
-                    self::$senha // Accessing static properties
-                );                  
+                    'mysql:host=localhost;port=3306;dbname=dbChamados',
+                    self::$user,
+                    self::$senha
+                );
             }
         } catch (PDOException $ex) {
             echo '<strong>Erro durante Conexão com Banco: ' . $ex->getMessage() . '</br>';
@@ -22,7 +21,7 @@ class Conex {
     }
 
     public function getConn() {
-        return self::Conectar(); 
+        return self::Conectar();
     }
 }
 ?>

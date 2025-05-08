@@ -1,6 +1,8 @@
 <?php
 
 class Usu {
+
+    private $id;
     private $nome;
     private $telefone;
     private $email;
